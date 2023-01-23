@@ -1,37 +1,58 @@
 
 
-
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/soc_ulp.h"
 #include "soc/sens_reg.h"
 
+
 .bss
 
-  .global wake_up
-  
 	.global adc_value
 adc_value:
 	.long 0
+  
 
   // ULP code starts here
   
   .text
 
   .global entry
+  .global multisampling
+  .global wake_up
+  .global valeur
+  .global boucle
 
-entry:      
-  MOVE r1,adc_value          // R1 <- @adc_value
-  /* Measure value using ADC1 pad 2 for 100 cycles and move result to R0 */
-  ADC r0, 0, 7                // R0 <- ADC1
-  ST r0,r1,0                  //charge la valeur de ADC1 dans R
-  JUMPR wake_up,2000,ge      //compare la valeur de R0 avec le seuil qui vaut 2000
-  JUMP entry   // Jump if last ALU has set overflow flag (ADC > seuil)                            
-        
- 
-	.global wake_up
-   
-  wake_up:
-          WAKE                          // Trigger wake up
-          HALT                    // Stop the ULP program
+entry:    
+  MOVE r1,0               //r1=0
+  JUMP multisampling      // on saute à la fonction multisampling pour échantillonner la valeur de l'adc 
+                                     
+wake_up:        
+    WAKE                          // Trigger wake up
+    HALT                    // Stop the ULP program
          
+
+multisampling: 
+    STAGE_RST                //reset le compteur i
+    JUMP boucle
+  
+boucle:                     //r1+=valeur de l'adc
+    STAGE_INC 1
+    ADC r0, 0, 7           
+    ADD r1,r1,r0
+    JUMPS valeur,4,EQ       //Si i==4 on va à la prochaine fonction
+    JUMP boucle
+ 
+
+ valeur:                 // on divise  r1/4 qui contient la moyenne de nos 4 valeurs
+  RSH r1,r1,2
+  MOVE r0,adc_value
+  ST  r1,r0,0           //adc_value contient la valeur échantillonnée de l'adc
+  LD r0,r0,0             //charge la valeur de adc_value dans l'adresse de r0
+  JUMPR wake_up,2000,ge  // on réveille l'esp32 si la valeur échantillonnée est supérieur à 2000 ce qui équivaut à une température >80°C
+  JUMP entry
+
+  
+
+
+
