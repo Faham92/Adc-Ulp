@@ -23,8 +23,8 @@ adc_value:
   .global valeur
   .global boucle
 
-entry:    
-  MOVE r1,0               //r1=0
+entry:               
+  MOVE r1, 0    
   JUMP multisampling      // on saute à la fonction multisampling pour échantillonner la valeur de l'adc 
                                      
 wake_up:        
@@ -40,16 +40,16 @@ boucle:                     //r1+=valeur de l'adc
     STAGE_INC 1
     ADC r0, 0, 7           
     ADD r1,r1,r0
-    JUMPS valeur,4,EQ       //Si i==4 on va à la prochaine fonction
+    JUMPS valeur,8,EQ       //Si i==8 on va à la prochaine fonction
     JUMP boucle
  
 
- valeur:                 // on divise  r1/4 qui contient la moyenne de nos 4 valeurs
-  RSH r1,r1,2
+ valeur:                 // on divise  r1/8 qui contient la moyenne de nos 4 valeurs
+  RSH r1,r1,3
   MOVE r0,adc_value
   ST  r1,r0,0           //adc_value contient la valeur échantillonnée de l'adc
-  LD r0,r0,0             //charge la valeur de adc_value dans l'adresse de r0
-  JUMPR wake_up,2000,ge  // on réveille l'esp32 si la valeur échantillonnée est supérieur à 2000 ce qui équivaut à une température >80°C
+  LD r0,r0,0             //charge la valeur de adc_value dans l'adresse de r0 car JUMPR se base sur l'adresse de ce dernier
+  JUMPR wake_up,770,ge  // on réveille l'esp32 si la valeur échantillonnée est supérieur à 2000 ce qui équivaut à une température >80°C
   JUMP entry
 
   
