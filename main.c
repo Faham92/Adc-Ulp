@@ -1,4 +1,5 @@
 
+
 #include <stdio.h>
 #include "esp_sleep.h"
 #include "sdkconfig.h"
@@ -22,33 +23,37 @@ extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
 static void init_run_ulp(esp_adc_cal_characteristics_t*);
 static void start_ulp_program();
 static void temperature (float* , int);
-RTC_DATA_ATTR esp_adc_cal_characteristics_t adc_chars;
+RTC_DATA_ATTR esp_adc_cal_characteristics_t adc_chars;    //initialise les charactéristiques de l'adc dans la mémoire RTC
 
 void app_main() 
 { 
-  float temp=0;
   esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
   esp_sleep_enable_ulp_wakeup();
+  float temp=0;
   if (cause != ESP_SLEEP_WAKEUP_ULP)
+  {
+    init_run_ulp(&adc_chars);
+    start_ulp_program();
+  }
+  uint32_t res = esp_adc_cal_raw_to_voltage(ulp_adc_value&0xFFFF, &adc_chars); //conversion adc-voltage 
+  temperature(&temp,res); //conversion temperature-voltage
+  if(temp >28)
+  {
+    vTaskDelay(100/portTICK_PERIOD_MS);
+    ESP_LOGE("[Main]","Température = %f°C  => Alarme! ",temp);
+    while(temp>28)
     {
-     init_run_ulp(&adc_chars);
-      start_ulp_program();
+      res = esp_adc_cal_raw_to_voltage(ulp_adc_value&0xFFFF, &adc_chars); //conversion adc-voltage 
+      temperature(&temp,res); //conversion temperature-voltage
+      vTaskDelay(10/portTICK_PERIOD_MS);
     }
-     esp_err_t err = ulp_run((&ulp_entry - RTC_SLOW_MEM));
-     ESP_ERROR_CHECK(err);
-     vTaskDelay(100/portTICK_PERIOD_MS);
-     while((uint16_t)ulp_adc_value >= 780)  
-   // while(1)
-      {
-        vTaskDelay(1000/portTICK_PERIOD_MS);
-        uint32_t res = esp_adc_cal_raw_to_voltage((uint16_t)ulp_adc_value, &adc_chars); //conversion adc-voltage 
-        temperature(&temp,res); //conversion temperature-voltage
-        ESP_LOGE("[Main]","température = %f°C V= %lumV",temp,res); 
-        
-      }
-      ESP_LOGE("[Main]","Going to sleep...");
-      esp_deep_sleep_start();
-   
+    ESP_LOGE("[Main]","Température en dessous du seuil");
+  }
+  esp_err_t err = ulp_run((&ulp_entry - RTC_SLOW_MEM));
+  ESP_ERROR_CHECK(err);
+  vTaskDelay(100/portTICK_PERIOD_MS);
+  ESP_LOGE("[Main]","Going to sleep");
+  esp_deep_sleep_start();
 }
 
 
