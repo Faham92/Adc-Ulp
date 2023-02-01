@@ -1,5 +1,4 @@
 
-
 #include <stdio.h>
 #include "esp_sleep.h"
 #include "sdkconfig.h"
@@ -14,21 +13,21 @@
 
 
 // Our header
-#include "ulp_main.h"
+#include "ulp_main.h"  //bibliotheque qui contient les déclarations et défintions des varibles et fonctions initialisées dans le Processeur Ultra Low Power
 
 // Unlike the esp-idf always use these binary blob names
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
 extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
 
-static void init_run_ulp(esp_adc_cal_characteristics_t*);
-static void start_ulp_program();
+static void init_run_ulp(esp_adc_cal_characteristics_t*);   //initialisation des pins rtc pour l'adc
+static void start_ulp_program();                            // on charge le binaire généré par le code assembleur  
 static void temperature (float* , int);
 RTC_DATA_ATTR esp_adc_cal_characteristics_t adc_chars;    //initialise les charactéristiques de l'adc dans la mémoire RTC
 
 void app_main() 
 { 
   esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-  esp_sleep_enable_ulp_wakeup();
+  esp_sleep_enable_ulp_wakeup();                       //Prévient le microcontroleur qu'il peut etre reveille par l'ulp
   float temp=0;
   if (cause != ESP_SLEEP_WAKEUP_ULP)
   {
@@ -43,8 +42,8 @@ void app_main()
     ESP_LOGE("[Main]","Température = %f°C  => Alarme! ",temp);
     while(temp>28)
     {
-      res = esp_adc_cal_raw_to_voltage(ulp_adc_value&0xFFFF, &adc_chars); //conversion adc-voltage 
-      temperature(&temp,res); //conversion temperature-voltage
+      res = esp_adc_cal_raw_to_voltage(ulp_adc_value&0xFFFF, &adc_chars); 
+      temperature(&temp,res); 
       vTaskDelay(10/portTICK_PERIOD_MS);
     }
     ESP_LOGE("[Main]","Température en dessous du seuil");
@@ -53,7 +52,7 @@ void app_main()
   ESP_ERROR_CHECK(err);
   vTaskDelay(100/portTICK_PERIOD_MS);
   ESP_LOGE("[Main]","Going to sleep");
-  esp_deep_sleep_start();
+  esp_deep_sleep_start();                    //passage en mode deep sleep
 }
 
 
@@ -76,7 +75,7 @@ static void start_ulp_program()
 }
 
 
-static void temperature (float *temp,int res)
+static void temperature (float *temp,int res)                //fonction qui convertit de la tension d'entree en temperature
 {
     *temp = (res - 500.0)/10;
 }
