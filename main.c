@@ -72,7 +72,7 @@ static void init_run_ulp(esp_adc_cal_characteristics_t* adc_chars)
 }
 static void start_ulp_program()
 {
-   ulp_set_wakeup_period(0,1*MicroSecondes_to_Secondes);
+   ulp_set_wakeup_period(0,30*MicroSecondes_to_Secondes);
     // REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG, SENS_SLEEP_CYCLES_S0,150000*15);
     /* Start the program */
     vTaskDelay(100/portTICK_PERIOD_MS);
