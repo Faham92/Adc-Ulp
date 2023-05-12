@@ -23,11 +23,6 @@ flag_alarme:
 
   .global entry
   .global entry2
-  .global multisampling
-  .global wake_up
-  .global ConditionInf
-  .global ConditionSup
-  .global exit
 
 .macro boucle nom_boucle condition
 STAGE_INC 1                   //i++
@@ -47,7 +42,7 @@ JUMPR \sortie,\seuil,\comparateur  // on réveille l'esp32 si la valeur échanti
 SUB r1,r2,8  
 JUMP exit,EQ
 JUMP \entree
-.endm
+.endm0
 
   
 entry: 
