@@ -42,7 +42,7 @@ JUMPR \sortie,\seuil,\comparateur  // on réveille l'esp32 si la valeur échanti
 SUB r1,r2,8  
 JUMP exit,EQ
 JUMP \entree
-.endm0
+.endm
 
   
 entry: 
